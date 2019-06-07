@@ -1,0 +1,854 @@
+---
+title: "Tarea Examen AED"
+author: "Alejandro Sanz Sánchez"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+
+
+#Exploracion inicial de los datos
+
+Se ha realizado una exploración de las tablas de excel de forma visual, para ver la clase de ficheros de datos con los que se deberá trabajar, de esta forma para el fichero de funcionamiento, observamos que algunos de los campos estarán vacíos  o todos sus valores son nulos, por tanto podremos eliminar algunas de las columnas de datos, ya que no aportaran información útil para el uso de los datos proporcionados
+
+#Importación de los ficheros de datos
+```{r,echo =FALSE,message=FALSE}
+
+path="./data/"
+library(readxl)
+
+#importamos el fichero de funcionamiento
+
+ds <- read_excel("data/ParametrosFuncionamiento.xlsx")
+
+#importamos el fichero de las Averias
+
+daver <- read_excel("data/Averias.xlsx", 
+    col_types = c("numeric", "numeric", "text", 
+        "date", "date", "date", "text", "text", 
+        "text"))
+
+#editamos ya la entrada de las variables de fecha y hora, ya que si no establecemos un criterio previo, las importa de forma incorrecta y no podemos recupera los valores originales.
+```
+
+#Análisis de los ficheros 
+##Fichero ParametrosFuncionamiento
+```{r , message=FALSE,echo =FALSE}
+library(dplyr)
+
+glimpse(ds)
+# La variable Fecha_registro, ya esta como fecha y hora
+```
+
+
+Vemos en el glimpse el tipo de variables contenidas en el dataframe importado y que en algunas de las variables de nuestro dataset ds contienen campos con el mismo numero, contiene todo NA o el mismo carácter. No obstante profundizaremos el estudio, antes de proceder a la eliminación de variables del mismo.
+
+
+
+Sospechamos que las variables ID_Grupo, ID_Control,ID_Agrupacion,Responsable_Registro, Valor, Valor_Nominal, Valor_Maximo_Admisible, Valor_Minimo_Admisible,Alerta_generada, TRAZ_ID_Maquina, Observaciones, Firma  contienen unicamente un valor  o son directamente NA. Para comprobar exactamente que es lo que tenemos, realizaremos la suma de todos los valores contenidos en las diferentes columnas que contienen valores numéricos, así como para las que contienen NA, cuantas de las filas no contiene NA.
+
+```{r, message=FALSE,echo =FALSE}
+#Variable Reg_variable
+num_reg_var <- length(unique(ds$Reg_variable))
+cat('Tenemos un total ', num_reg_var, 'de valores diferentes en la varaible Reg_variable ',"  \n")
+
+#Variable Fecha_registro
+num_fecha_reg <- length(unique(ds$Fecha_registro))
+cat('Tenemos un total ', num_fecha_reg, 'fechas distintas  ',"  \n")
+
+#Variable ID_Variable
+numID_Variable <- length(unique(ds$ID_Variable))
+cat('Tenemos un total ', numID_Variable, 'de valores diferentes en la variable Reg_variable ',"  \n")
+
+#Variable ID_grupo
+numID_Grupo <- sum(ds$ID_Grupo)
+cat('La suma de los numeros contenidos en la variable ID_Grupo es: ', numID_Grupo,"  \n")
+
+
+#Variable ID_Control
+numID_Control <- sum(ds$ID_Control)
+cat('La suma de los numeros contenidos en la variable numID_Control es: ', numID_Control,"  \n")
+
+
+#Variable ID_Agrupacion
+numID_Agrupacion <- sum(which(!is.na(ds$ID_Agrupacion)))
+cat('En la variable ID_Agrupacion hay un total de ', numID_Agrupacion, ' valores distintos a NA',"  \n")
+
+ 
+#Variable Responsable_Registro
+numRespreg <- unique(ds$Responsable_Registro)
+cat('En la variable Responsable_Registro contiene los valores ', numRespreg[1], 'y',numRespreg[2],"  \n")
+
+
+#Variable Valor
+#convertimos la variable valor a numerica
+library(hablar) # con este paquete podemos convertir las comas decimales a puntos, ya que si intentamos lo coercion directa, en el mejor de los casos elimina la coma decimal y se convierte en un entero donde los decimales son numeros del propio valor y en el peor de los casos le hace coercion a NA
+
+dsValortest <- ds$Valor %>% retype()
+numValor <- sum(dsValortest)
+cat('La suma de los numeros contenidos en la variable Valor es: ', numValor,"  \n")
+
+
+#Variable Valor_Nominal
+numValor_Nominal <- sum(ds$Valor_Nominal)
+cat('La suma de los numeros contenidos en la variable Valor_Nominal es: ', numValor_Nominal,"  \n")
+
+
+#Variable Valor_Maximo_Adminisble
+numValor_Maximo_Admisible <- sum(ds$Valor_Maximo_Adminisble)
+cat('La suma de los numeros contenidos en la variable Valor_Maximo_Adminisble es: ', numValor_Maximo_Admisible,"  \n")
+
+
+#Variable Valor_Minimo_Adminisble
+numValor_Minimo_Admisible <- sum(ds$Valor_Minimo_Adminisble)
+cat('La suma de los numeros contenidos en la variable Valor_Minimo_Adminisble es: ', numValor_Minimo_Admisible,"  \n")
+
+
+#Variable Alerta_Generada
+numValor_Alerta_generada<- sum(which(ds$Alerta_Generada!=FALSE))
+cat('En la variable Alerta_Generada hay un total de ', numValor_Alerta_generada, ' valores distintos de el valor FALSE.',"  \n")
+
+
+#Variable AR_Identificador
+numAR_Identificador <- length(unique(ds$AR_Identificador))
+cat('Tenemos un total ', numAR_Identificador, 'codigos diferentes en la variable AR_Identificador ',"  \n")
+
+
+#Variable TRAZ_Id_Maquina
+numTRAZ_ID_Maquina <- sum(which(ds$TRAZ_Id_Maquina!=4))
+cat('En la variable TRAZ_ID_Maquina hay un total de ', numTRAZ_ID_Maquina, ' valores distintos de el numero 4.',"  \n")
+
+
+#Variable AR_Identificador
+munTRAZ_ID_Reg_Maquina <- length(unique(ds$TRAZ_Id_Reg_Maquina))
+cat('Tenemos un total ', munTRAZ_ID_Reg_Maquina, 'valores diferentes en la variable TRAZ_Id_Reg_Maquina ',"  \n")
+
+
+#Variable Observaciones
+numObservaciones <- sum(which(ds$Observaciones!='nd'))
+cat('En la variable Observaciones hay un total de ', numID_Grupo, 'campos distintos de nd.',"  \n")
+
+
+#Variable Firma
+numFirma <- sum(which(!is.na(ds$Firma)))
+cat('En la variable Firma hay un total de ', numFirma, ' valores distintos a NA.',"  \n")
+
+#Eliminamos las variables intermedias que hemos creado para realizar el conteo de valores 
+
+rm(numID_Grupo,numID_Control,numID_Agrupacion,numRespreg,dsValortest,numValor_Nominal,numValor_Maximo_Admisible,numValor_Minimo_Admisible,numValor_Alerta_generada,numTRAZ_ID_Maquina,numObservaciones,numFirma,numValor,num_reg_var,numID_Variable,munTRAZ_ID_Reg_Maquina,numAR_Identificador,num_fecha_reg)
+```
+
+
+De lo anterior podemos ver que variables contienen datos distintos de cero o NA y que ademas cuantos valores distintos tiene cada una de las variables. Con lo especificado en el enunciado, todas las variables que contengan el mismo valor,cero o NA serán descartadas para el análisis posterior de los datos proporcionados.Cabe destacar la importancia de  convertir la variable de Valor de carácter  a numérico, ya que no eliminaremos la variable de nuestro conjunto de datos, considerando primero que dicha variable tiene la coma decimal como "," en lugar de "." , esto será importante ya que sino la transformación directa de carácter a variable nos modificará los valores de la misma , ya sea convirtiendo directamente a numérico o a factor y luego numérico.De igual forma, la variable Fecha_Registro ya esta como variable de tipo fecha y hora, por lo tanto no realizares ninguna transformación(de momento), a la misma . 
+Por otro lado  la variable Responsable_registro contiene los valores "ns", así como NA y Firma contenga el valor "nd", debe significar que no se conoce la persona encargada del registro y a raíz de esto, tampoco se ha realizado la firma. De la misma forma no se ha establecido ningún criterio para el valor nominal, el valor máximo/mínimo admisible, ya que estas 3 variables solo contienen ceros.
+
+&nbsp
+
+
+##Fichero Averias
+
+```{r}
+glimpse(daver)
+```
+
+Vamos ahora a profundizar en los datos contenidos en este segundo conjunto de datos, para ver el numero de valores distintos por variables y realizar una selección de las variables que contengan información útil.
+
+
+```{r,message=FALSE}
+#Variable Maq
+nummaq <- sum(which(daver$Maq!=4))
+cat('En la variable Maq hay un total de ', nummaq, ' valores distintos de el numero 4.',"  \n")
+
+
+#Variable OrdenProduccion
+num_Orden <- length(unique(daver$OrdenProduccion))
+cat('Tenemos un total ', num_Orden, 'valores distintos en la variable ordenProduccion  ',"  \n")
+
+
+#Variable Referencia
+num_ref <- length(unique(daver$Referencia))
+cat('Tenemos un total ', num_ref, 'valores distintos en la variable Referencia  ',"  \n")
+
+
+#Variable FechaInicioProd
+num_FechaInicioProd <- length(unique(daver$FechaInicioProd))
+cat('Tenemos un total ', num_FechaInicioProd, 'fechas distintas en la variable FechaInicioProd ',"  \n")
+
+#Variable FechaFinProd
+num_FechaFinProd <- length(unique(daver$FechaFinProd))
+cat('Tenemos un total ', num_FechaFinProd, 'fechas distintas en la variable FechaFinProd',"  \n")
+
+
+#Variable FechaInicioAveria
+
+num_FechaInicioAveria <- length(unique(daver$FechaInicioAveria))
+cat('Tenemos un total ', num_FechaInicioAveria, 'fechas distintas en la variable FechaInicioAveria',"  \n")
+
+
+#Variable TipoAveria
+num_TipoAveria <- length(unique(daver$TipoAveria))
+cat('Tenemos un total ', num_TipoAveria, 'tipos de averias distintas en la variable TipoAveria ',"  \n")
+
+#Variable Averia
+num_Averia <- length(unique(daver$Averia))
+cat('Tenemos un total ', num_Averia, ' averias distintas en la variable Averias ',"  \n")
+
+#Variable Duración
+daver$Duración <- as.numeric(daver$Duración)
+num_duracion <- length(unique(daver$Duración))
+cat('Tenemos un total ', num_duracion, ' valores distintos en la variable Duración  ',"  \n")
+
+#Eliminamos las variables intermedias que hemos creado para realizar el conteo de valores 
+
+rm(nummaq,num_Orden,num_ref,num_FechaInicioProd,num_FechaFinProd,num_FechaInicioAveria,num_TipoAveria,num_Averia,num_duracion)
+```
+
+Eliminaremos la variable "maq", ya que no aporta nada todos los valore son los mismo, ya que como se nos ha dicho previamente todos los valores pertenecen a la misma máquina. Y hemos convertido la variable de duración a numérico, ya que parece adecuado el real izarlo para el uso futuro.
+```{r}
+daver2 <- select(daver,-Maq)
+```
+
+Una vez llegados a este punto hemos conseguido limpiar los datos iniciales que se nos había presentado y se puede proceder a las siguientes secciones de la tarea.
+
+&nbsp
+
+#Analisis del fichero de averias.
+
+```{r}
+library(knitr)
+library(kableExtra)
+Tablacon <- table(daver2$Averia,daver2$TipoAveria)
+
+kable(Tablacon,align = 'c') %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive","bordered"))
+```
+
+```{r}
+rm(Tablacon)
+```
+
+
+Las averías de tipo "PARADA" se deben 2 casos de Cambio de cabezal, 4 casos a cambio de malla, 4 a cambo de tallarina, 15 operaciones de limpieza y 1 caso de rotura de hilos.
+
+Las averías de tipo "AVERIA" se deben a 9 casos de fallo de la bomba de vacío, 1 caso de fallo de calefacción, 2 fallos de los cargadores, 2 fallos de los dosificadores, 1 caso de avería electiva y 1 fallo de transporte neumático.
+
+Representamos las duraciones de las averias por tipos de plasticos fabricados.
+
+```{r ,message=FALSE,echo =FALSE}
+library(ggplot2)
+ggplot(daver2)+geom_boxplot(aes(x=Referencia,y=`Duración`))+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+
+
+
+Podemos tambien realizar un boxplot para ver las duraciones medias de las averias y los tipos de averia:
+
+
+```{r, message=FALSE,echo =FALSE}
+ggplot(daver2%>%filter(TipoAveria!="-"))+geom_boxplot(aes(x=TipoAveria,y=`Duración`))
+```
+
+
+
+```{r, message=FALSE,echo =FALSE}
+ggplot(daver2%>%filter(TipoAveria=="AVERIAS"))+
+  geom_boxplot(aes(x=Averia,y=`Duración`))
+```
+
+#Periodicidad del fichero de Averias
+Vamos a estudiar ahora la periodicidad del fichero Averías.
+
+```{r, message=FALSE,echo =FALSE}
+daver2 <- mutate(daver2,IncFechaProd=FechaFinProd-FechaInicioProd,IncFechaInicioAveriaInicioProd=FechaInicioAveria-FechaInicioProd,IncFechaInicioAveriaFinProd=FechaFinProd-FechaInicioAveria)
+
+
+daver2$IncFechaInicioAveriaInicioProd <- as.difftime(as.numeric(daver2$IncFechaInicioAveriaInicioProd,units="hours"),units="hours")
+
+daver2$IncFechaInicioAveriaFinProd <- as.difftime(as.numeric(daver2$IncFechaInicioAveriaFinProd,units="hours"),units="hours")
+```
+
+
+Hemos tenido que transformar algunas de las diferencias temporales a horas, ya que así se especificaba en el enunciado.
+
+Ahora realizamos las diferencias temporales para el conjunto de datos ds
+
+```{r}
+
+ds <- mutate(ds,difer.eventos=c(0,diff(Fecha_registro)))
+```
+
+Realizamos ahora la representación gráfica de la diferencia del la Fecha_registro y la diferencia de tiempos, para ver si podemos encontrar algún tipo de patrón.
+
+```{r}
+library(ggplot2)
+ggplot(ds,aes(ds$Fecha_registro,ds$difer.eventos,color="red"))+geom_point()+labs(x = "Fecha Registro", y = "Diferencia de Eventos")
+```
+
+Hemos encontrado que tenemos un posible outlayer para los valores de las diferencias temporales, a consecuencia de esto la escala con la que se ha representado no permite discernir ningún tipo de patrón. Procederé a representar la misma gráfica, limitando los valores representados en el eje y ,para ver si así podemos observar algún tipo de patrón.
+
+
+
+
+```{r, message=FALSE,echo =FALSE}
+
+ggplot(ds,aes(ds$Fecha_registro,ds$difer.eventos,color="red"))+geom_point()+ylim(0,65)+labs(x = "Fecha Registro", y = "Diferencia de Eventos")
+```
+
+Observamos que tenemos algún tipo de patrón, ya que las gráficas se parecen para días diferentes, requerimos de mas estudio para ver si tenemos algún tipo de patrón.Se ha Representado entre 0 y 75 para poder observar mejor el patrón, ya que tenemos ciertos puntos por encima de 100, pero es una cantidad despreciable, en comparación con la cantidad de puntos a representar.
+
+observamos así mismo que para diferentes días las diferencias tienen tanto regiones donde la diferencia temporal se mantiene constante en algunas regiones , no obstante a o largo del día también hay zonas donde la diferencias temporales decrecen y en crecen.
+
+Vamos ahora a tomar el logaritmo en base 10 para transformar los valores de las diferencias de los eventos, con el fin de intentar observar algún patrón mas claro, que para las representaciones anteriores.
+
+```{r,  message=FALSE,echo =FALSE}
+ggplot(ds,aes(ds$Fecha_registro,ds$difer.eventos,color="red"))+geom_point()+scale_y_log10()+labs(x = "Fecha Registro", y = "log(Diferencia de Eventos)")
+```
+
+Observamos de nuevo un patrón, de nuevo los valores que podrían tratarse de outlayers nos modifican de forma importante la escala de representación, vamos a limitar de nuevo la escala, para ver la representación de forma mas detallada.
+
+```{r ,message=FALSE,echo =FALSE}
+ggplot(ds,aes(ds$Fecha_registro,ds$difer.eventos,color="red"))+geom_point()+scale_y_log10(limits = c(1,1e2))+labs(x = "Fecha Registro", y = "log(Diferencia de Eventos)")
+```
+
+Ahora se puede discernir mejor la gráfica, no obstante vemos patrones de crecimiento y decrecimiento, así como lineas rectar para los valores de 100 y de 60 segundos, como en el caso de la representación sin logaritmo.
+
+
+```{r}
+ggplot(ds)+geom_histogram(aes(ds$difer.eventos),bins = 50)+labs(x = "Diferencia de Eventos", y = "Frecuencias")
+```
+
+No se puede observar nada en dicho histograma debido a que la mayoría de los valores están agrupados entre los valores de 0 y 150. Ademas cabe destacar que la escala que obtenemos se debe a que tenemos un posible valor outlayer que tiene como valor 
+
+```{r, message=FALSE,echo =FALSE}
+
+ggplot(filter(ds,difer.eventos>1 & difer.eventos<120),aes(difer.eventos))+geom_histogram(bins = 60)+xlim(0,65)+labs(x = "Diferencia de Eventos", y = "Frecuencias")
+
+```
+
+Tras representar el histograma, vemos que principalmente se agrupan entorno al valor 60 segundos, siendo la frecuencia de este mucho mayor que el resto, esto se debe a que se toman varias medidas para un mismo tiempo y al minuto se vuelve a realizar una medida. Por eso el periodo de muestreo mas frecuente es el de los 60 segundos. Cabe destacar que se ha representado para un valor máximo de 60 segundos, ya que tras el filtrado aplicado, no se obtenía para el rango especificado ningún valor por encima de 60.
+
+
+Creamos la nueva variable que contiene los tiempos de registro redondeados al minuto.
+
+```{r, message=FALSE,echo =FALSE}
+library(lubridate)
+ds <- mutate(ds,Fecha_registro_Red=round_date(Fecha_registro,unit = "minute"))
+```
+
+Seleccionamos ahora de forma aleatoria el 1% de los eventos de dataframe ds
+
+
+```{r}
+set.seed(3141592)
+porc <- nrow(ds)*0.01 # para saber cuantas observaciones corresponderian al 1% del conjuto de datos
+dsrand <- ds[sample(nrow(ds),porc),] # Seleccion del 1% de forma aleatoria del dataframe ds
+```
+
+Realizamos ahora el gráfico de la Id_variable frente a la Fecha_registro_Red
+
+```{r}
+ggplot(dsrand,aes(x=Fecha_registro_Red,y=ID_Variable))+geom_point()+labs(x = "Fecha de Registro Redondeada", y = "Id Variable")
+```
+
+Encontramos para el muestreo del 1% de los datos originales, una agrupación de puntos importante por debajo del valor de Id variable de 225, así como algunas franjas que por la agrupación de los puntos se asemejan a lineas rectas tanto para un Id Variable menor de 225 y otro cercano a 270.
+Así mismo encontramos que las alrededor de 16 de Julio, no tenemos muestreo de datos.
+
+
+Realizamos ahora la misma gráfica, agrupando por colores para los distintos valores de la ID_variable.
+
+```{r}
+ggplot(dsrand,aes(x=Fecha_registro_Red,y=ID_Variable,col=ID_Variable))+geom_point()+labs(x = "Fecha de Registro Redondeada", y = "Id Variable")
+```
+
+Se observa de nuevo, como tenemos una agrupación de puntos para el rango de 225, ya que se puede observar con el gradiente de colores obtenido al emplear la Id variable como color para los distintos puntos , un mayor numerario de zonas con azul color intenso que corresponde a aquellos valores por debajo de 225.
+
+
+Realizamos un histograma para la Id_variable, para confirmar lo afirmado anteriormente.
+
+```{r,message=FALSE}
+ggplot(dsrand,aes(ID_Variable))+geom_histogram()
+```
+
+En efecto la mayor cantidad de valores estan agrupado por debajo de 225, así mismo cabe destacar que tenemos una región donde no hay valores para Id_Variable.
+
+```{r}
+rm(porc,dsrand)
+```
+
+#Grupos en Base a la frecuencia de muestreo.
+
+```{r,message=FALSE}
+detach(package:dplyr)
+detach(package:ggplot2)
+library(dplyr)
+RepEvento.ID_var <- ds %>% group_by(AR_Identificador) %>% summarise(rep=n())%>% arrange(desc(rep))
+# empleamos el summarise para poder contar el numero de repeticiones con la instruccion n() de dplyr y el arrange para ordendar de forma descendiente para las repeticiones
+```
+
+
+```{r}
+library(kableExtra)
+Valmax <- RepEvento.ID_var %>% filter(rep==max(rep))
+
+kable(Valmax,align = 'c') %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive","bordered"),full_width = F)
+```
+
+En la tabla anterior se refleja las variables con las mayores frecuencias de muestreo.
+
+Para ver si tiene relación las variables con mayor muestro con la ID_variable, realizamos una selección de los valores de ds que contienen el AR_identificador de aquellas muestras que tienen el mayor numero de cuentas y realizamos un histograma de los valores para ID_Variable.
+
+```{r, message=FALSE,echo =FALSE}
+ID_varrel <- ds %>% filter(AR_Identificador==c("0 SET POINT DOSIFICACIÓN A","106 TOTAL CAUDAL A DOSIFICAR","20 SET POINT DOSIFICACIÓN B","20 SET POINT DOSIFICACIÓN C","20 SET POINT DOSIFICACIÓN D","20 SET POINT DOSIFICACIÓN E","78 DOSIFICACIÓN B","78 DOSIFICACIÓN C","78 DOSIFICACIÓN D","78 DOSIFICACIÓN E","78 Dosificador A")) %>% group_by(ID_Variable)
+```
+
+
+```{r}
+library(ggplot2)
+ggplot(ID_varrel,aes(ID_Variable))+geom_histogram(binwidth = 1)
+rm(ID_varrel)
+```
+
+Como se puede ver de nuevo, aquellas variables que tienen mayor frecuencia , poseen al mismo tiempo valores de ID_variable alrededor de 220, como en los casos anteriores ya estudiados.
+
+
+
+
+```{r}
+cat('Las repeticiones diferentes que tenemos seran:',unique(RepEvento.ID_var$rep))
+```
+
+
+De esta forma suponemos que ahora debemos asignar las etiquetas para los 5 periodos que se han obtenido al medir las repeticiones, donde 01 se asignara a las variables con repetición 29910, 05 a las que tengan repetición 5987 y así para el resto.
+
+```{r} 
+#Para crear la nueva variable que meteremos en el dataframe RepEvento.Id
+et <- as.character()
+for (i in seq(nrow(RepEvento.ID_var))){
+  
+  if(RepEvento.ID_var$rep[i]==29910)
+    et <- c(et,'01')
+  if(RepEvento.ID_var$rep[i]==5987)
+    et<- c(et,'05')
+  if(RepEvento.ID_var$rep[i]==2996)
+    et<- c(et,'10')
+  if(RepEvento.ID_var$rep[i]==2000)
+    et<- c(et,'15')
+  if(RepEvento.ID_var$rep[i]==505)
+    et<- c(et,'60')
+}
+et <- as.factor(et)
+```
+
+
+```{r}
+RepEvento.ID_var <- mutate(RepEvento.ID_var,nfac=et)
+kable(head(RepEvento.ID_var),align = 'c') %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive","bordered"),full_width = F)
+
+rm(RepEvento.ID_var)
+```
+
+Se puede ver que se ha creado correctamente la nueva columna del dataframe y se ha guardado la variable nfac como factor.
+
+Crearemos ahora una nueva variable para el dataframe ds , que combinara la periodicidad y las variables, para ello primero agruparemos los datos.
+
+```{r}
+datainter <- ds %>% group_by(ID_Variable,AR_Identificador) %>% summarise(rep=n())
+```
+
+```{r} 
+#Para crear la nueva variable que meteremos en el dataframe RepEvento.Id
+et <- as.character()
+for (i in seq(nrow(datainter))){
+  
+  if(datainter$rep[i]==29910)
+    et <- c(et,'01')
+  if(datainter$rep[i]==5987)
+    et<- c(et,'05')
+  if(datainter$rep[i]==2996)
+    et<- c(et,'10')
+  if(datainter$rep[i]==2000)
+    et<- c(et,'15')
+  if(datainter$rep[i]==505)
+    et<- c(et,'60')
+}
+et <- as.factor(et)
+```
+
+
+```{r}
+datainter$nafc <- et
+kable(head(datainter)
+,align = 'c') %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive","bordered"),full_width = F)
+
+```
+
+
+
+
+
+```{r}
+
+library(tidyr)
+dsinterm <- merge(ds,datainter,sort = F)
+t <- rep("t",635023)
+dsinterm$t <- t
+dsinnuevo <- unite(dsinterm,"intter",c(t,nafc),sep="") #Al unir nos desaparecen las columnas que combinamos, de esta forma , será necesario guardar el valor de ds$ID_variable, antes de unir las columans en su forma final, de esta forma.
+
+
+dsinnuevo1 <- unite(dsinnuevo,"ID_Variable_per",c(intter,ID_Variable),sep=".")
+dsinnuevo1$ID_Variable <- ds$ID_Variable
+dsinnuevo1$ID_Variable_per <- as.factor(dsinnuevo1$ID_Variable_per)
+
+#Ahora guardamos el dataframe en el dataframe que teniamos origalmente.
+
+ds <- dsinnuevo1
+```
+
+
+
+
+```{r}
+#eliminamos los dataframes y varaibles intermedias empleadas hasta el momento, para liberar memoria y porque dudo que las pueda emplear de nuevo
+
+rm(dsinnuevo,dsinnuevo1,i,et,Valmax,dsinterm,t,datainter)
+```
+
+#Analisis de las varaibles medidas en ds
+
+
+Tras realizar esto guardaremos el resultado un nuevo dataframe llamado ds.nz, donde guardamos las variables del dataframe ds que no contienen valores nulos y que nos aportan algo de información. Se ha cambado también los valores de la variable Valor de carácter a numérico, considerando que el separador de decimales en dicha variable inicialmente estaba con una coma en lugar de como un punto. Esto es importante, ya que si no se considera esto, se puede obtener una variable distinta a la esperada.
+
+
+
+```{r,echo =FALSE}
+ds.nz <- select(ds,-ID_Grupo,-ID_Control,-ID_Agrupacion,-Responsable_Registro,-Valor_Nominal,-Valor_Maximo_Adminisble,-Valor_Minimo_Adminisble,-Alerta_Generada,-TRAZ_Id_Maquina,-Observaciones,-Firma)
+ds.nz$Valor <- ds.nz$Valor %>% retype() # para cambiar de comas a puntos, del paquete "hablar"
+ds.nz$TRAZ_Id_Reg_Maquina <- as.numeric(ds.nz$TRAZ_Id_Reg_Maquina)
+
+```
+
+
+Creamos un nuevo dataset llamado ds.nz.col
+
+```{r}
+ds.nz.col <- spread(ds.nz,ID_Variable_per,Valor)
+
+# Comprobamos si los valores contenidos son los mismos en el dataaframe separado que en el original
+sum(select(ds.nz.col,-(1:8)),na.rm=T)==sum(ds.nz$Valor)
+```
+
+Creamos el dataframe llamado data partiendo del dataframe ds.nz.col
+
+```{r}
+#Diria que asi esta bien, los enuncuados estan demasiado confusos
+data <- gather(ds.nz.col,Variable,Valor,-c(1:8))
+data <- data[complete.cases(data[,-4]),]
+data <- select(data,Fecha_registro_Red,Variable,Valor)
+```
+
+#Analisis visual de ds
+
+Suponemos que se refiere que a las variables se refiere a la columna ID_Variable_per de ds y hacemos la media para dicho dataframe.
+
+
+
+```{r}
+ds$Valor <- ds$Valor %>% retype()
+datosmedias <- ds %>% group_by(ID_Variable_per) %>% summarise(media= mean(Valor))
+
+
+ggplot(datosmedias,aes(ID_Variable_per,media))+geom_bar(width = 1, stat='identity')+theme(axis.text.x = element_text(angle = 90,size=6) )+labs(x = "ID Variable per", y = "Media")
+
+
+
+
+ggplot(filter(datosmedias,media>2500),aes(ID_Variable_per,media))+geom_bar(width = 1, stat='identity')+theme(axis.text.x = element_text(angle = 90,size=8) )+labs(x = "ID Variable per", y = "Media mayor de 2500")
+
+ggplot(filter(datosmedias,media<2500),aes(ID_Variable_per,media))+geom_bar(width = 1, stat='identity')+theme(axis.text.x = element_text(angle = 90,size=8) )+labs(x = "ID Variable per", y = "Media menor de 2500")
+
+```
+
+Queremos ahora conocer la información sobre la distribución de la variables, de esta forma queremos realizar un boxplot en función de la periodicidad creando un boxplot para cada grupo de variables.
+
+```{r}
+data.group <- data %>% separate(Variable,c("periodo","ID_Variable"))
+data.group$periodo <- as.factor(gsub("t", "", paste(data.group$periodo))) #para eliminar las t's de los periodos y lo hacemos factor.
+
+data.group$ID_Variable <- as.numeric(data.group$ID_Variable)
+```
+
+Realizamos ahora la representación con ggplot empleando la instrucción facet_grid.
+
+```{r}
+ggplot(data.group,aes(ID_Variable,Valor),color=periodo)+geom_point()+facet_grid(rows = vars(periodo))+labs(x = "ID Variable", y = "Valor")
+```
+
+En la gráfica anterior podemos ver los puntos agrupados por periodo y representando el ID_Variable frente al Valor. Vamos ahora a realizar el boxplot, para ver que se nos muestra.
+
+```{r, message=FALSE,echo =FALSE}
+ggplot(data.group,aes(ID_Variable,Valor),colour=periodo)+geom_boxplot()+facet_grid(rows = vars(periodo))+labs(x = "ID Variable", y = "Valor")
+```
+
+
+
+Debido a las diferencias de escalas vamos a representar para los diferentes periodos por separado.
+
+```{r}
+
+grupo01 <- filter(data.group,periodo=="01")
+grupo01$ID_Variable <- as.factor(grupo01$ID_Variable)
+ggplot(grupo01,aes(ID_Variable,Valor,col=ID_Variable))+geom_boxplot()+labs(x = "ID Variable", y = "Valor")
+
+```
+
+Cabe destacar que nos quedan para varias ID algo no apreciable, esto no se debe a la escala, sino a que contiene tantas cantidades de ceros que la media queda en cero.
+
+```{r  ,message=FALSE,echo =FALSE}
+
+grupo05 <- filter(data.group,periodo=="05")
+grupo05$ID_Variable <- as.factor(grupo05$ID_Variable)
+
+ggplot(grupo05,aes(ID_Variable,Valor,col=ID_Variable))+geom_boxplot()+labs(x = "ID Variable", y = "Valor")+theme(axis.text.x = element_text(angle = 90,size=8) )
+
+grupo05parc <- filter(data.group,ID_Variable==c("215", "225", "226" ,"227" ,"228", "229", "230" ,'231', '232', '233', '234', '235' ,'236', '237', '238', '239', '240', '241', '242', '243', '244', '245' ,'246', '247', '248', '249', '250' ,'251' ,'252', '253' , '257',  '269', '270', '276'))
+grupo05parc$ID_Variable <- as.factor(grupo05parc$ID_Variable)
+ ggplot(grupo05parc,aes(ID_Variable,Valor,col=ID_Variable))+geom_boxplot()+labs(x = "ID Variable", y = "Valor")+theme(axis.text.x = element_text(angle = 90,size=8) )
+
+
+grupo05parc2 <- filter(data.group,ID_Variable==c('254',"265"))
+grupo05parc2$ID_Variable <- as.factor(grupo05parc2$ID_Variable)
+
+ ggplot(grupo05parc2,aes(ID_Variable,Valor,col=ID_Variable))+geom_boxplot()+labs(x = "ID Variable", y = "Valor")+theme(axis.text.x = element_text(angle = 90,size=8) )
+
+
+```
+
+De nuevo en este caso tenemos sobre todo valores con medias muy centradas en cero, esto es mucho mas aparente en la primera de las gráficas.
+
+```{r}
+
+
+grupo10 <- filter(data.group,periodo=="10")
+grupo10$ID_Variable <- as.factor(grupo10$ID_Variable)
+ggplot(grupo10,aes(ID_Variable,Valor,col=ID_Variable))+geom_boxplot()+labs(x = "ID Variable", y = "Valor")
+
+
+
+```
+
+De nuevo como en el caso anterior casi todos los valores nos salen centrados en cero, salvo en el caso de valor de ID Variable de 258 y 262.
+
+```{r}
+grupo15 <- filter(data.group,periodo=="15")
+grupo15$ID_Variable <- as.factor(grupo15$ID_Variable)
+ggplot(grupo15,aes(ID_Variable,Valor,col=ID_Variable))+geom_boxplot()+labs(x = "ID Variable", y = "Valor")+theme(axis.text.x = element_text(angle = 90,size=8) )
+
+```
+
+De nuevo la mayoría de valores tiene media cero, por eso no son apreciables en los boxplots.
+
+```{r}
+grupo60 <- filter(data.group,periodo==60)
+grupo60$ID_Variable <- as.factor(grupo60$ID_Variable)
+ggplot(grupo60,aes(ID_Variable,Valor,col=ID_Variable))+geom_boxplot()+labs(x = "ID Variable", y = "Valor")
+```
+
+```{r}
+#eliminamos los dataframes de grupos, ya que no se usaran mas adelante
+rm(grupo01,grupo05parc2,grupo05,grupo05parc,grupo10,grupo15,grupo60,data.group)
+```
+
+
+#Analisis estadistico de ds.nz
+
+```{r,message=FALSE}
+library(mlr)
+ds.nzfi <- select(ds.nz,-ID_Variable_per,-AR_Identificador,-Fecha_registro,-Fecha_registro_Red)
+ds.nz2 <- select(summarizeColumns(ds.nzfi),-na,-mad,-nlevs,-type)
+
+names(ds.nz2) <- c("Variable","Media","Desviación típica","Mediana","Mínimo","Máximo")
+
+kable(ds.nz2,digits=2,caption = "Descripción de las variables")
+
+```
+
+
+#Analisis del fichero alarmas.
+
+
+Vamos a determinar los productos plásticos que mas se fabrican, para ello vamos a obtener la frecuencia de aparición de los diferentes tipo de plásticos.
+
+```{r, message=FALSE,echo =FALSE}
+detach(package:dplyr)
+detach(package:ggplot2)
+library(dplyr)
+Plasticos <- daver %>% group_by(Referencia) %>% summarise(rep=n())%>% arrange(desc(rep))
+kable(Plasticos,align = 'c') %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive","bordered"),full_width = F)
+```
+
+Las referencias con mayores frecuencias son B1S25 G15-008-02 , PPC1S15 G30-007-02 y A1S25 G20B10-0020-02.
+
+##Tipos de alarma frente al tipo de plastico fabricado.
+
+Creamos la tabla de contingencia para los tipos de alarma frente a los plásticos fabricados.
+
+```{r,message=FALSE}
+
+Plastico.Tipo.Averia <-table(daver$Referencia,daver$TipoAveria)
+
+
+
+ kable(Plastico.Tipo.Averia,align = 'c') %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive","bordered"))
+```
+
+Añadimos a el dataframe anterior las frecuencias absolutas y lo mostramos:
+
+```{r, message=FALSE,echo =FALSE}
+Plastico.Tipo.Averia<-as.data.frame(Plastico.Tipo.Averia)%>%cbind(Frec.Absoluta=(rowSums(Plastico.Tipo.Averia[,1:6])))
+
+names(Plastico.Tipo.Averia) <- c("Referencia","Tipo Averia","Frecuencia","Frecuencia Absoluta")
+kable(Plastico.Tipo.Averia,align = 'c') %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive","bordered"))
+
+
+```
+
+Repetimos el procedimiento anterior ahora con la variable de Averías.
+
+```{r,message=FALSE}
+
+Plastico.Tipo.Averia2 <-table(daver$Referencia,daver$Averia)
+
+
+kable(Plastico.Tipo.Averia2,align = 'c') %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive","bordered"))
+```
+
+```{r, message=FALSE,echo =FALSE}
+
+Plastico.Tipo.Averia2<-as.data.frame(Plastico.Tipo.Averia2)%>%cbind(Frec.Absoluta=(rowSums(Plastico.Tipo.Averia2[,1:6])))
+
+names(Plastico.Tipo.Averia2) <- c("Referencia","Tipo Averia","Frecuencia","Frecuencia Absoluta")
+kable(Plastico.Tipo.Averia2,align = 'c') %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive","bordered"))
+
+
+
+
+```
+
+```{r}
+#eliminamos los dataframes de plasticos, ya que no se usaran mas adelante
+rm(Plasticos,Plasticosfreq,Plasticosfreq2,Plastico.Tipo.Averia,Plastico.Tipo.Averia2,ds.nz2,ds.nzfi)
+
+```
+
+
+#Analisis Exploratorio de ds con tecnicas de agrupamiento.
+
+##Muestreo uniforme de ds.nz.col
+
+```{r}
+nonulast60.268 <- which(ds.nz.col$t60.268!=0)
+cat('Los valores no nulos de la variable t60.268 de ds.nz.col son:',unique(nonulast60.268))
+
+filassuma <- rowSums(ds.nz.col[9:98], na.rm=T) #hago al suma de todas las filas que tienen valor tnumer.x y lo añado a ds.nz.col
+ds.nz.col$Medias <- filassuma/90 #para sacar el promedio y lo meto en ds.nz.col
+#Seleccionamos ahora las filas que queremos, que son de la 634519 a la 635023
+
+ds.nz.col.fusion<- ds.nz.col[nonulast60.268,]
+
+
+```
+
+
+
+
+##Agrupamiento jerárquico
+
+```{r, message=FALSE,echo =FALSE}
+ds.nz.col.fusion.scale <- ds.nz.col.fusion %>% mutate_all(as.numeric, na.rm=TRUE) %>% scale %>% as.data.frame
+
+ds.nz.col.fusion.scale <- Filter(function(x) !all(is.na(x)), ds.nz.col.fusion.scale)
+```
+
+
+
+Realizamos el clustering jerarquico empleando la distancia euclidea y con criterio de enlace "com".
+
+```{r}
+hClustering<-ds.nz.col.fusion.scale[]%>%dist%>%hclust(method = "com")
+plot(hClustering,col="red2",hang=0.1,labels=F)
+```
+
+Se corta el árbol y se selecciona el agrupamiento que contiene cinco clusters y posteriormente se obtiene el centroide de cada uno de los cinco clusters.
+```{r}
+clusters <- cutree(hClustering, k=5)
+
+# Function to find medoid in cluster i (source: https://www.biostars.org/p/13143/)
+clust.centroid = function(i, dat, clusters) {
+    ind = (clusters == i)
+    colMeans(dat[ind,])
+}
+
+ds.nz.col.fusion.unscale <- ds.nz.col.fusion %>% select(colnames(ds.nz.col.fusion.scale)) %>% mutate_all(as.numeric, na.rm=TRUE)
+
+tmp <- sapply(unique(clusters), clust.centroid, ds.nz.col.fusion.unscale, clusters)
+```
+
+
+##Visualización con agrupamientos. Heatmaps.
+Finalmente se va a realizar otro agrupamiento con los datos de los que se dispone, en esta ocasión un heatmap que realiza el agrupamiento tanto en filas como en columnas.
+```{r}
+dataMatrix <- data.matrix(ds.nz.col.fusion.scale)
+
+# By column
+heatmap(
+  dataMatrix,cexRow=0.5,
+  distfun=function(x) dist(x, method = 'euclidean'),
+  hclustfun=function(x) hclust(x, method='ward.D')
+)
+```
+
+```{r}
+# By row
+heatmap(
+  t(dataMatrix),
+  distfun=function(x) dist(x, method = 'euclidean'),
+  hclustfun=function(x) hclust(x, method='ward.D')
+)
+```
+
+Las regiones del Heatmap con colores semejantes indican asociación entre las filas y las columnas, por lo tanto es una medida de las correlaciones entre las diferentes variables, al realizar a representacion por filas o columnas se obtiene lo mismo, solo que rotado.
+Debido a la gran cantidad de varibles representadas no es facil ver que variables estan relacionadas entre si.
+
+#Conclusiones.
+
+Vamos ahora a responder a las preguntas que se planteaban al comienzo de la practica.
+
+¿Existen periodicidades?
+Hemos encontrado periodicidades para el fichero de los datos de funcionamiento y el fichero de averias, donde las perodicidades tienen que ver con las medidas de comprobacion de funcionamiento de los sistemas, donde se registra el parametro evaluado así como cada cuanto tiempo se registra encontrando que hay medidas que se toman cada minuto, cada 5 minutos, cada 10 minutos, cada 15 minutos y cada hora.
+
+Para el fichero de las averias tambien encontramos diferentes periodicidades como la frecuencia de rotura o de mantenimiento que se debe realizar a la maquina con las que se esta trabajando.
+
+¿Hay alguna relacion entre el tipo de plastico utilizado y las alarmas?
+
+Para los plasticos más fabricados tenemos las siguientes incidencias:
+
+-Para B1S25 G15-008-02 tenemos unicamente 3 incidencias con una unica averia.
+-Para PPC1S15 G30-007-02  tenemos unicamente 3 incidencias con 0 averias.
+-Para A1S25 G20B10-0020-02 tenemos 7 incidencias con un total de 2 averias.
+
+El plástico con mayor numero de averias es el B1S25 G15-0008-02 con 5 averias.
+
+
+¿ Existe alguna relacion entre el tipo de plastico y la duracion de los procesos ?
+
+-Para B1S25 G15-008-02  tarda alredeor de media hora en solventarse las averias.
+-Para PPC1S15 G30-007-02  tarda alredor de 20 minutos las averias en solucionarse.
+-Para A1S25 G20B10-0020-02 tarda alredor de 22 minutos en arreglar las averias.
+
+Los plasticos que mas tardan en solucionar sus averias son B1S25-G10M202-0005-02, B1X25 V0-9010-02 y PPC1S15 M20XV2-0072-02.
+
+

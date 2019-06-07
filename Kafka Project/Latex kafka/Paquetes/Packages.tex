@@ -1,0 +1,44 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% - Paquetes empleados en mi Documento - %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage[left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage[footnotesize]{caption}
+\usepackage{subcaption}
+\usepackage{blindtext}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\usepackage{tabularx}
+\usepackage[maxbibnames=99,backend=bibtex,sorting=none]{biblatex}
+\usepackage{tcolorbox} % para que te haga tablas del indice molonas
+\usepackage{hyperref}
+\hypersetup{
+	pdfnewwindow=true,              % Links en una nueva ventana
+	linktoc=page,                   % Dónde aparece el link (none,section,page,all)
+	colorlinks=true,                % false: Links en cajas; true: Links en colores
+	linkcolor=cyan,                 % Color de los links internos
+	citecolor=blue,                % Color de los links de la bibliografía
+	filecolor=magenta,              % Color de los links de archivos
+	urlcolor=blue                    % Color de los links externos
+}
+
+%\usepackage[urw-garamond]{mathdesign} % http://www.ctan.org/tex-archive/fonts/mathdesign/
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{nccmath}
+
+\newcommand\e{\text{e}}
+\renewcommand\d{\text{d}}
+
+\graphicspath{{./Imagenes/}}
+\DeclareGraphicsExtensions{.pdf,.jpeg,.png,.jpg}
+
+%hace referencia a la carpeta donde tiene que cargar las imagenes,por eso en el documento raiz llama a la imagen mediante el nombre y la extension directamente
+
